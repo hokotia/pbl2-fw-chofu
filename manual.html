@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15181e">
+<title>B1 バス観測記録 説明書</title>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#ffffff;--ink:#15181e;--sub:#5a6270;--line:#d5dae1;
+  --acc:#1d5fd8;--acc-soft:#e6eefc;--ok:#1d7a46;--ok-soft:#e8f5ee;--warn:#b93a0b;--warn-soft:#fdeee7;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.7 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:10;background:var(--ink);color:#fff;padding:10px 16px}
+header h1{margin:0;font-size:16px}
+header a{color:#fff;font-size:13px;opacity:.9}
+main{max-width:560px;margin:0 auto;padding:12px 16px 48px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0 0 14px;scroll-margin-top:60px}
+h2{margin:0 0 8px;font-size:17px}
+h3{margin:16px 0 6px;font-size:15px}
+p{margin:6px 0}
+ol,ul{margin:6px 0;padding-left:22px}
+li{margin:4px 0}
+a{color:var(--acc)}
+.toc{display:flex;flex-wrap:wrap;gap:6px}
+.toc a{display:inline-block;padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;text-decoration:none;color:var(--ink);background:#fff}
+.btn{display:block;text-align:center;padding:12px;border-radius:8px;background:var(--acc);color:#fff;font-weight:700;text-decoration:none;margin-top:8px}
+.steps{list-style:none;padding:0;counter-reset:s}
+.steps li{position:relative;padding:2px 0 10px 40px;counter-increment:s}
+.steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+.steps b{display:block}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+th{width:34%;color:var(--sub);font-weight:700}
+.note{background:var(--warn-soft);border-left:4px solid var(--warn);padding:10px 12px;border-radius:6px;font-size:14px;margin:10px 0}
+.tip{background:var(--acc-soft);border-left:4px solid var(--acc);padding:10px 12px;border-radius:6px;font-size:14px;margin:10px 0}
+.kbd{display:inline-block;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:14px;font-weight:700}
+.kbd.p{background:var(--acc);border-color:var(--acc);color:#fff}
+.mock{list-style:none;margin:8px 0;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:14px}
+.mock li{display:grid;grid-template-columns:52px 44px 38px 1fr 18px;gap:6px;align-items:center;padding:9px 8px;border-bottom:1px solid var(--line);margin:0}
+.mock li:last-child{border-bottom:0}
+.mock .past{color:var(--sub)}
+.mock .next{box-shadow:inset 5px 0 0 var(--acc)}
+.mock .done{background:var(--ok-soft)}
+.mock .t,.mock .r{font-weight:700}
+.mock .s{font-size:12px;color:var(--sub)}
+.mock .c{color:var(--ok);font-weight:700}
+.legend{font-size:13px;color:var(--sub);margin:4px 0 0}
+.lv{display:grid;grid-template-columns:36px 1fr;gap:6px;align-items:center;margin:4px 0}
+.lv span:first-child{display:flex;align-items:center;justify-content:center;height:30px;border-radius:6px;background:var(--acc);color:#fff;font-weight:700}
+dl{margin:6px 0}
+dt{font-weight:700;margin-top:10px}
+dd{margin:2px 0 0 0;color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <h1>B1 バス観測記録 説明書</h1>
+  <a href="./">← 記録ページを開く</a>
+</header>
+
+<main>
+<section>
+  <h2>このページについて</h2>
+  <p>バスの積み残し問題（FWシートのB1）を調べるための、記録アプリの使い方です。スマホのブラウザで動きます。</p>
+  <div class="toc">
+    <a href="#setup">最初の設定</a>
+    <a href="#steps">記録の手順</a>
+    <a href="#items">各項目の数え方</a>
+    <a href="#timetable">時刻表の見方</a>
+    <a href="#fix">間違えたとき</a>
+    <a href="#submit">提出・バックアップ</a>
+    <a href="#faq">困ったとき</a>
+  </div>
+  <a class="btn" href="./">記録ページを開く</a>
+  <p class="legend">観測の前に、一度開いて設定を済ませておくとスムーズです。</p>
+</section>
+
+<section id="setup">
+  <h2>1. 最初の設定</h2>
+  <p>記録ページの「設定」欄で入力します。<b>2回目以降は自動で引き継がれる</b>ので、毎回入れ直す必要はありません。</p>
+  <table>
+    <tr><th>記録者</th><td>自分の名前（全員のデータを集計するときに使います）</td></tr>
+    <tr><th>観測地点</th><td>「調布駅北口」または「つつじヶ丘駅北口」</td></tr>
+    <tr><th>表示する乗り場</th><td>調布駅北口のみ。担当する乗り場（11・12・13番）だけ選ぶと、時刻表が見やすくなります</td></tr>
+    <tr><th>ダイヤ</th><td>日付から自動で選ばれます（土曜は「土曜」、日曜は「日曜・祝日」）。祝日に観測する場合だけ手動で切り替えてください</td></tr>
+  </table>
+</section>
+
+<section id="steps">
+  <h2>2. 記録の手順（1便ごと）</h2>
+  <ol class="steps">
+    <li><b>時刻表から便をタップ</b>バスが来たら、時刻表でその便をタップします。系統・行先・定刻が自動で入ります。</li>
+    <li><b>乗車人数を数える</b>乗る人に合わせて <span class="kbd">＋</span> を押します。押しすぎたら <span class="kbd">−</span>。</li>
+    <li><b>観光客数を数える</b>乗った人のうち、観光客と判断できる人を <span class="kbd">＋</span> で数えます。</li>
+    <li><b>発車したら「今」を押す</b><span class="kbd p">今</span> で実発車時刻が入ります。押し遅れたら <span class="kbd">−1分</span> <span class="kbd">＋1分</span> で直します。</li>
+    <li><b>積み残しと混雑度を選ぶ</b>積み残しの有無（または人数）と、車内混雑度（1〜4）を選びます。</li>
+    <li><b>「保存」を押す</b>入力欄が空になり、画面が時刻表に戻ります。次の便へ。</li>
+  </ol>
+  <div class="tip">入力の途中で画面がロックされたり、ページを開き直したりしても、入力中の内容は残ります。</div>
+</section>
+
+<section id="items">
+  <h2>3. 各項目の数え方</h2>
+  <dl>
+    <dt>乗車人数</dt>
+    <dd>そのバス停で、その便に乗った人数。</dd>
+
+    <dt>観光客数</dt>
+    <dd>乗車人数のうち、<b>見た目から明らかに観光客と分かる人</b>だけを数えます。迷ったら数えません。目安：</dd>
+    <dd>
+      <ul>
+        <li>スーツケース</li>
+        <li>デジタルカメラ・一眼レフカメラ</li>
+        <li>紙のガイドブックや観光マップ</li>
+        <li>自撮り棒</li>
+        <li>土産物の袋</li>
+      </ul>
+    </dd>
+
+    <dt>積み残し</dt>
+    <dd><b>その便に乗ろうとして、満員で乗れなかった人</b>のことです。同じ乗り場に別の系統を待つ人もいるので、「乗ろうとしたのに乗れなかった」様子が見えた場合だけ記録します。</dd>
+    <dd>
+      <ul>
+        <li><b>A版</b>（通常の記録ページ）：「なし／あり」を選び、ありの場合はおおよその人数を入れます</li>
+        <li><b>B版</b>（<a href="b.html">b.html</a>）：人数を入れます（いなければ0のまま）</li>
+      </ul>
+    </dd>
+
+    <dt>車内混雑度</dt>
+    <dd>発車するときの車内の様子で選びます。</dd>
+    <dd>
+      <div class="lv"><span>1</span><span>座席に空きがある</span></div>
+      <div class="lv"><span>2</span><span>立っている人がいる</span></div>
+      <div class="lv"><span>3</span><span>通路が埋まっている</span></div>
+      <div class="lv"><span>4</span><span>乗車できない人がいる</span></div>
+    </dd>
+    <dd>積み残しがあるのに4以外を選ぶと警告が出ます。実際の様子に合っていれば、そのまま保存して構いません。</dd>
+
+    <dt>実発車時刻</dt>
+    <dd>ドアが閉まって発車した時刻。定刻との差（遅れ）は自動で計算されます。</dd>
+
+    <dt>欠便</dt>
+    <dd>時刻表の時刻を過ぎても来なかった便は、「欠便」にチェックを入れて保存します。</dd>
+
+    <dt>メモ</dt>
+    <dd>気付いたことがあれば自由に（例：「2台続けて到着」「車いすの方の乗車で発車が遅れた」）。</dd>
+  </dl>
+  <div class="note">氏名など、乗客を特定できる情報はメモに書かないでください。</div>
+</section>
+
+<section id="timetable">
+  <h2>4. 時刻表の見方</h2>
+  <p>現在時刻の30分前から90分後までの便が表示されます。</p>
+  <ul class="mock" aria-label="時刻表の表示例">
+    <li class="past done"><span class="t">10:10</span><span class="r">調34</span><span class="s">11番</span><span>深大寺行</span><span class="c">✓</span></li>
+    <li class="past"><span class="t">10:12</span><span class="r">吉06</span><span class="s">12番</span><span>吉祥寺駅行</span><span></span></li>
+    <li class="next"><span class="t">10:16</span><span class="r">吉14</span><span class="s">11番</span><span>吉祥寺駅行</span><span></span></li>
+    <li><span class="t">10:18</span><span class="r">鷹56</span><span class="s">12番</span><span>三鷹駅行</span><span></span></li>
+  </ul>
+  <ul>
+    <li><b>灰色の文字</b>：発車時刻を過ぎた便</li>
+    <li><b>左の青い線</b>：次に来る便</li>
+    <li><b>緑の背景と ✓</b>：記録済みの便</li>
+  </ul>
+  <p>観測時間外で便が表示されないときは、「全ての便を表示」を押すと9〜15時台の全便が出ます。</p>
+  <h3>時刻表にない便が来たとき</h3>
+  <p>記録欄の「系統」で「その他（手入力）」を選び、系統名・行先・乗り場・定刻を入力します。</p>
+</section>
+
+<section id="fix">
+  <h2>5. 間違えたとき</h2>
+  <ul>
+    <li><b>保存前</b>：その項目を直すか、<span class="kbd">クリア</span> で入力をやり直します。</li>
+    <li><b>保存後</b>：「記録済み」欄でその記録の <span class="kbd">削除</span> を押し、入力し直します（編集機能はありません）。</li>
+  </ul>
+</section>
+
+<section id="submit">
+  <h2>6. 提出・バックアップ</h2>
+  <div class="note"><b>データは自分のスマホのブラウザ内にだけ保存されます。</b>ブラウザの履歴・データを消去すると記録も消えます。シークレット（プライベート）モードでは使わないでください。</div>
+  <h3>観測中のバックアップ</h3>
+  <p>数便ごとに、画面下の「CSV」欄の <span class="kbd p">コピー</span> を押し、メモアプリなどに貼り付けておいてください。</p>
+  <h3>観測が終わったら</h3>
+  <ol>
+    <li><span class="kbd p">コピー</span> を押す（または <span class="kbd">共有</span> から直接送る）</li>
+    <li>グループの Google Chat に貼り付けて送る</li>
+  </ol>
+  <p>ファイルで送りたい場合は <span class="kbd">CSV保存</span> を使います。</p>
+  <div class="tip">提出してリーダーが受け取りを確認するまでは、「全記録を削除」は押さないでください。</div>
+</section>
+
+<section id="faq">
+  <h2>7. 困ったとき</h2>
+  <dl>
+    <dt>時刻表に便が出ない</dt>
+    <dd>観測時間外の可能性があります。「全ての便を表示」を押してください。観測地点・乗り場・ダイヤの設定も確認してください。</dd>
+    <dt>「この便はすでに記録があります」と出た</dt>
+    <dd>同じ便を二重に保存しようとしています。別の記録者と重複していないか確認してから保存してください。</dd>
+    <dt>「観光客数が乗車人数を超えています」と出た</dt>
+    <dd>観光客数は乗車人数の内数です。数を見直してください。</dd>
+    <dt>コピーできない</dt>
+    <dd>CSV欄のテキストを長押しして「すべて選択」→「コピー」してください。</dd>
+    <dt>アプリの不具合・分からないこと</dt>
+    <dd>Google Chat でフィールドワークリーダーに連絡してください。</dd>
+  </dl>
+</section>
+</main>
+</body>
+</html>
