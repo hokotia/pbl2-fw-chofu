@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15181e">
+<title>B1 バス観測記録</title>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#ffffff;--ink:#15181e;--sub:#5a6270;--line:#d5dae1;
+  --acc:#1d5fd8;--acc-soft:#e6eefc;--ok:#1d7a46;--ok-soft:#e8f5ee;--warn:#b93a0b;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:10;background:var(--ink);color:#fff;padding:10px 16px}
+header h1{margin:0;font-size:16px;font-weight:700}
+header .meta{font-size:13px;opacity:.85;display:flex;gap:12px;flex-wrap:wrap}
+main{max-width:560px;margin:0 auto;padding:12px 16px 40px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 14px;scroll-margin-top:64px}
+h2{margin:0 0 10px;font-size:15px}
+label,.lbl{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px}
+.hint{font-size:12px;color:var(--sub);margin:4px 0 0}
+input,select,textarea{font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+textarea{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;min-height:150px}
+button{font:inherit;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:disabled{opacity:.35}
+button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+button.danger{color:var(--warn);border-color:var(--warn)}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row>*{flex:1;min-width:0}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 0}
+.seg button.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.counter{display:grid;grid-template-columns:68px 1fr 68px;gap:8px}
+.counter button{font-size:28px;font-weight:700;line-height:1}
+.counter input{text-align:center;font-size:26px;font-weight:700;padding:6px}
+.check{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--ink);margin:14px 0 0}
+.check input{width:22px;height:22px;margin:0}
+.tt{position:relative;list-style:none;margin:0;padding:0;max-height:50vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+.tt li{display:grid;grid-template-columns:54px 46px 40px 1fr 20px;gap:6px;align-items:center;padding:11px 8px;border-bottom:1px solid var(--line);cursor:pointer}
+.tt li:last-child{border-bottom:0}
+.tt li.past{color:var(--sub)}
+.tt li.next{box-shadow:inset 5px 0 0 var(--acc)}
+.tt li.done{background:var(--ok-soft)}
+.tt li.sel{background:var(--acc-soft)}
+.tt .t{font-weight:700;font-variant-numeric:tabular-nums}
+.tt .r{font-weight:700}
+.tt .s{font-size:12px;color:var(--sub)}
+.tt .d{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt .c{color:var(--ok);font-weight:700;text-align:right}
+.tt .empty{display:block;cursor:default;color:var(--sub);font-size:14px}
+.sel-box{padding:10px 12px;border-radius:8px;background:var(--acc-soft);font-weight:700}
+.delay{font-size:14px;margin-top:6px;color:var(--sub)}
+.hint.warn{color:var(--warn);font-weight:700;font-size:13px}
+.rec{list-style:none;margin:0;padding:0}
+.rec li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.rec li:last-child{border-bottom:0}
+.rec li button{min-height:36px;padding:4px 10px;font-size:13px;flex:0 0 auto}
+.rec .empty{color:var(--sub)}
+.badge{font-size:13px;color:var(--sub);font-weight:400}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.toast.err{background:var(--warn)}
+details summary{cursor:pointer;font-weight:700;font-size:15px}
+details ol{padding-left:20px;margin:8px 0 0;font-size:14px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">B1 バス観測記録</h1>
+  <div class="meta"><span id="hdrDate"></span><span id="hdrDia"></span><span id="hdrClock"></span></div>
+</header>
+
+<main>
+<section>
+  <details>
+    <summary>使い方</summary>
+    <ol>
+      <li>最初に「記録者」「観測地点」を設定（次回以降は自動で引き継ぎ）</li>
+      <li>バスが来たら、時刻表から便をタップ</li>
+      <li>乗車人数・観光客数を＋ボタンで数える</li>
+      <li>発車したら「今」で実発車時刻を記録（±1分で修正可）</li>
+      <li>積み残し・混雑度を選んで「保存」</li>
+      <li>こまめに「コピー」してメモ等にバックアップ。終了後、CSVをチャットに貼り付け</li>
+    </ol>
+  </details>
+</section>
+
+<section>
+  <h2>設定</h2>
+  <label for="recorder">記録者</label>
+  <input id="recorder" type="text" placeholder="氏名" autocomplete="off">
+  <span class="lbl">観測地点</span>
+  <div class="seg" id="locSeg"></div>
+  <div id="stopWrap">
+    <span class="lbl">表示する乗り場</span>
+    <div class="seg" id="stopSeg"></div>
+  </div>
+  <span class="lbl">ダイヤ</span>
+  <div class="seg" id="diaSeg"></div>
+  <p class="hint" id="diaHint"></p>
+</section>
+
+<section id="ttSec">
+  <h2>時刻表 <span class="badge" id="ttInfo"></span></h2>
+  <ul class="tt" id="tt"></ul>
+  <div class="row" style="margin-top:8px"><button id="toggleAll" type="button"></button></div>
+</section>
+
+<section id="formSec">
+  <h2>記録</h2>
+  <div class="sel-box" id="selBox"></div>
+  <div class="row">
+    <div style="flex:3"><label for="route">系統</label><select id="route"></select></div>
+    <div style="flex:2"><label for="sched">定刻</label><input id="sched" type="time"></div>
+  </div>
+  <div id="otherWrap" class="row hide">
+    <div><label for="otherRoute">系統名</label><input id="otherRoute" type="text" autocomplete="off"></div>
+    <div><label for="otherDest">行先</label><input id="otherDest" type="text" autocomplete="off"></div>
+    <div style="flex:0 0 70px"><label for="otherStop">乗り場</label><input id="otherStop" type="text" inputmode="numeric" autocomplete="off"></div>
+  </div>
+  <label class="check"><input type="checkbox" id="cancel"> 欠便（バスが来なかった）</label>
+
+  <div id="mainFields">
+    <label for="actual">実発車時刻</label>
+    <div class="row">
+      <input id="actual" type="time" style="flex:2">
+      <button id="nowBtn" type="button" class="primary">今</button>
+      <button id="minus1" type="button">−1分</button>
+      <button id="plus1" type="button">＋1分</button>
+    </div>
+    <div class="delay" id="delayView"></div>
+
+    <span class="lbl">乗車人数</span>
+    <div class="counter" data-key="board"></div>
+
+    <span class="lbl">うち観光客数</span>
+    <div class="counter" data-key="tour"></div>
+    <p class="hint">見た目から明らかな場合のみ：スーツケース／デジタルカメラ・一眼レフ／紙のガイドブック・観光マップ／自撮り棒／土産物の袋 など</p>
+
+    <div id="leftA">
+      <span class="lbl">積み残し（この便に乗ろうとして乗れなかった人がいたか）</span>
+      <div class="seg" id="leftSeg"></div>
+      <div id="approxWrap" class="hide">
+        <span class="lbl">積み残しの概数（おおよその人数）</span>
+        <div class="counter" data-key="leftApprox"></div>
+      </div>
+    </div>
+    <div id="leftB">
+      <span class="lbl">積み残し人数（この便に乗れなかった人数）</span>
+      <div class="counter" data-key="leftCount"></div>
+    </div>
+
+    <span class="lbl">車内混雑度</span>
+    <div class="seg" id="congSeg"></div>
+    <p class="hint">1:座席に空き　2:立ち客あり　3:通路が埋まる　4:乗車できない人がいる</p>
+    <p class="hint warn hide" id="congWarn">⚠ 積み残しがありますが、混雑度が4ではありません。この組み合わせでよいか確認してください。</p>
+  </div>
+
+  <label for="memo">メモ</label>
+  <input id="memo" type="text" autocomplete="off">
+  <div class="row" style="margin-top:14px">
+    <button id="clearBtn" type="button">クリア</button>
+    <button id="saveBtn" type="button" class="primary" style="flex:2">保存</button>
+  </div>
+</section>
+
+<section>
+  <h2>記録済み <span class="badge" id="recCount"></span></h2>
+  <ul class="rec" id="recList"></ul>
+</section>
+
+<section>
+  <h2>CSV（バックアップ・提出用）</h2>
+  <textarea id="csv" readonly></textarea>
+  <div class="row" style="margin-top:8px">
+    <button id="copyBtn" type="button" class="primary">コピー</button>
+    <button id="shareBtn" type="button">共有</button>
+    <button id="dlBtn" type="button">CSV保存</button>
+  </div>
+  <div class="row" style="margin-top:8px"><button id="wipeBtn" type="button" class="danger">全記録を削除</button></div>
+</section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+// ===== 版の切替（A: 積み残し 有無＋概数 / B: 積み残し 人数）=====
+const MODE = "B";
+
+const KEY = "fw-b1-" + MODE;
+const VER_LABEL = MODE === "A" ? "A版" : "B版";
+
+const ROUTES = [
+  {id:"調34", op:"京王",   dest:"深大寺行",           stop:"11", loc:"調布駅北口"},
+  {id:"鷹66", op:"京王",   dest:"三鷹駅南口行",       stop:"11", loc:"調布駅北口"},
+  {id:"吉14", op:"小田急", dest:"吉祥寺駅行",         stop:"11", loc:"調布駅北口"},
+  {id:"鷹61", op:"小田急", dest:"三鷹駅行",           stop:"11", loc:"調布駅北口"},
+  {id:"吉06", op:"小田急", dest:"吉祥寺駅行",         stop:"12", loc:"調布駅北口"},
+  {id:"鷹56", op:"小田急", dest:"三鷹駅行",           stop:"12", loc:"調布駅北口"},
+  {id:"武91", op:"京王",   dest:"武蔵小金井駅南口行", stop:"13", loc:"調布駅北口"},
+  {id:"丘21", op:"京王",   dest:"深大寺行",           stop:"",   loc:"つつじヶ丘駅北口"}
+];
+const LOCS = ["調布駅北口", "つつじヶ丘駅北口"];
+const STOPS = ["11", "12", "13"];
+const DIAS = {sat:"土曜", sun:"日曜・祝日"};
+const HOURS = [9, 10, 11, 12, 13, 14, 15];
+
+// 各系統の 9〜15時台の発車（分）
+const RAW = {
+  sat: {
+    "調34": ["12 22 32 52","10 23 32 50","02 14 30 44 57","10 25 40 55","10 22 36 50","03 15 30 45 55","10 25 37 50"],
+    "鷹66": ["08 45","06 36","17 39","04 43","06 40","08 41","07 42"],
+    "吉14": ["16 35 56","16 30 52","10 28 52","14 34 52","12 32 52","12 32 52","12 32 52"],
+    "鷹61": ["10 40","12 42","20 48","18 48","15 45","18 50","22 55"],
+    "吉06": ["10 25 42 57","12 28 44 57","14 29 45 58","11 24 37 52","05 20 32 46 59","11 22 35 48","01 14 27 40 53"],
+    "鷹56": ["02 17 32 47","03 18 34 50","06 20 34 48","02 16 30 44 58","12 26 39 52","05 18 32 46","03 19 35 51"],
+    "武91": ["12 32","02 32","02 32","02 32","02 32","02 32","02 32"],
+    "丘21": ["01 08 15 23 31 39 47 55","03 11 19 27 35 43 51 59","08 17 26 35 44 53","02 11 20 29 38 47 56","05 14 23 32 41 50 59","08 17 26 35 44 53","02 11 20 29 38 47 56"]
+  },
+  sun: {
+    "調34": ["00 10 22 40 52","10 19 32 45 55","08 15 25 40 55","10 25 40 50","05 20 30 45","00 15 30 45","00 10 25 40 55"],
+    "鷹66": ["17 42","08 36","06 38","05 43","06 41","04 43","06 43"],
+    "吉14": ["13 35 57","15 30 52","10 30 50","14 34 52","12 32 52","12 32 55","14 31 51"],
+    "鷹61": ["12 55","20 50","20 52","18 47","15 43","10 40","08 36"],
+    "吉06": ["08 23 38 55","08 23 39 53","06 18 30 44 57","12 27 41 56","08 20 32 44 54","06 18 30 40 52","04 16 28 40 52"],
+    "鷹56": ["03 18 33 49","03 18 33 48","01 12 24 37 50","05 20 35 49","03 18 34 49","04 20 35 50","06 20 35 50"],
+    "武91": ["12 35 54","08 22 42","02 22 42","02 22 42","02 22 42","02 22 42","02 22 42"],
+    "丘21": ["01 08 15 23 31 39 47 55","03 11 19 27 35 43 51 59","08 17 26 35 44 53","02 11 20 29 38 47 56","05 14 23 32 41 50 59","08 17 26 35 44 53","02 11 20 29 38 47 56"]
+  }
+};
+
+const COLS = ["記録者","日付","ダイヤ","観測地点","乗り場","系統","行先","定刻","実発車時刻","遅れ(分)","乗車人数","観光客数"]
+  .concat(MODE === "A" ? ["積み残し有無","積み残し概数"] : ["積み残し人数"])
+  .concat(["混雑度","欠便","メモ","入力日時"]);
+
+// ===== ユーティリティ =====
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const todayStr = (d = new Date()) => d.getFullYear() + "/" + pad(d.getMonth() + 1) + "/" + pad(d.getDate());
+const hm = (d = new Date()) => pad(d.getHours()) + ":" + pad(d.getMinutes());
+const hms = (d = new Date()) => hm(d) + ":" + pad(d.getSeconds());
+function toMin(s){ const m = /^(\d{1,2}):(\d{2})/.exec(s || ""); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+function fromMin(n){ n = ((n % 1440) + 1440) % 1440; return pad(Math.floor(n / 60)) + ":" + pad(n % 60); }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function csvCell(v){ const s = String(v ?? ""); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function load(k, def){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
+let storeWarned = false;
+function store(k, v){
+  try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+  catch(e){ if(!storeWarned){ storeWarned = true; toast("端末に保存できません。こまめにコピーしてください", true); } return false; }
+}
+let toastTimer = null;
+function toast(msg, err){
+  const t = $("toast"); t.textContent = msg; t.classList.toggle("err", !!err); t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), err ? 3200 : 1800);
+}
+
+// ===== 状態 =====
+const S = Object.assign({recorder:"", loc:"調布駅北口", stops:["11","12","13"], dia:null, diaDate:"", showAll:false}, load(KEY + "-settings", {}));
+let R = load(KEY + "-records", []);
+const blankForm = () => ({route:"", sched:"", other:false, oRoute:"", oDest:"", oStop:"", cancel:false, actual:"",
+  board:0, tour:0, left:null, leftApprox:0, leftCount:0, cong:0, memo:""});
+let F = Object.assign(blankForm(), load(KEY + "-draft", {}));
+
+const saveSettings = () => store(KEY + "-settings", S);
+const saveRecords = () => store(KEY + "-records", R);
+const saveDraft = () => store(KEY + "-draft", F);
+
+function curDia(){
+  if(S.dia && S.diaDate === todayStr()) return S.dia;
+  return new Date().getDay() === 0 ? "sun" : "sat";
+}
+function entries(dia){
+  const out = [];
+  for(const r of ROUTES){
+    const rows = RAW[dia][r.id]; if(!rows) continue;
+    rows.forEach((str, i) => {
+      if(!str) return;
+      str.trim().split(/\s+/).forEach(mm => {
+        const t = pad(HOURS[i]) + ":" + pad(+mm);
+        out.push({route:r, time:t, min:toMin(t)});
+      });
+    });
+  }
+  out.sort((a, b) => a.min - b.min || a.route.stop.localeCompare(b.route.stop));
+  return out;
+}
+function isDone(routeId, time){
+  const t = todayStr();
+  return R.some(r => r["日付"] === t && r["観測地点"] === S.loc && r["系統"] === routeId && r["定刻"] === time);
+}
+function leftLocked(){ return MODE === "A" ? F.left === true : F.leftCount > 0; }
+
+// ===== 描画 =====
+function seg(el, items, isOn, onPick, isDisabled){
+  el.innerHTML = "";
+  items.forEach(([val, label]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label;
+    if(isOn(val)) b.classList.add("on");
+    if(isDisabled && isDisabled(val)) b.disabled = true;
+    b.onclick = () => onPick(val);
+    el.appendChild(b);
+  });
+}
+
+function renderHeader(){
+  $("title").textContent = "B1 バス観測記録（" + VER_LABEL + "）";
+  $("hdrDate").textContent = todayStr();
+  $("hdrDia").textContent = DIAS[curDia()] + "ダイヤ";
+  $("hdrClock").textContent = hm();
+}
+
+function renderSettings(){
+  $("recorder").value = S.recorder;
+  seg($("locSeg"), LOCS.map(l => [l, l]), v => v === S.loc, v => {
+    S.loc = v; saveSettings();
+    const r = ROUTES.find(x => x.id === F.route);
+    if(r && r.loc !== v){ F.route = ""; F.sched = ""; saveDraft(); }
+    renderSettings(); routeOptions(); renderForm(); renderTT(true);
+  });
+  $("stopWrap").classList.toggle("hide", S.loc !== "調布駅北口");
+  seg($("stopSeg"), STOPS.map(s => [s, s + "番"]), v => S.stops.includes(v), v => {
+    if(S.stops.includes(v)){ if(S.stops.length === 1) return toast("1つ以上選んでください", true); S.stops = S.stops.filter(x => x !== v); }
+    else { S.stops = STOPS.filter(x => x === v || S.stops.includes(x)); }
+    saveSettings(); renderSettings(); renderTT(true);
+  });
+  const dia = curDia();
+  seg($("diaSeg"), Object.entries(DIAS), v => v === dia, v => {
+    S.dia = v; S.diaDate = todayStr(); saveSettings();
+    renderSettings(); renderHeader(); renderTT(true);
+  });
+  const wd = new Date().getDay();
+  $("diaHint").textContent = (wd >= 1 && wd <= 5 && !(S.dia && S.diaDate === todayStr()))
+    ? "平日ダイヤは未収録です（土曜ダイヤを表示中）。祝日は「日曜・祝日」に切り替えてください。"
+    : "日付から自動で選んでいます。祝日は「日曜・祝日」に切り替えてください。";
+}
+
+function renderTT(scroll){
+  const dia = curDia();
+  const list = entries(dia).filter(e => e.route.loc === S.loc && (S.loc !== "調布駅北口" || S.stops.includes(e.route.stop)));
+  const nowMin = toMin(hm());
+  const shown = S.showAll ? list : list.filter(e => e.min >= nowMin - 30 && e.min <= nowMin + 90);
+  const ul = $("tt"); ul.innerHTML = "";
+  $("ttInfo").textContent = DIAS[dia] + "／" + S.loc;
+  $("toggleAll").textContent = S.showAll ? "現在時刻の前後だけ表示" : "全ての便を表示（9〜15時台）";
+  if(!shown.length){
+    ul.innerHTML = '<li class="empty">表示できる便がありません（観測時間外）。「全ての便を表示」を押してください。</li>';
+    return;
+  }
+  let nextEl = null;
+  shown.forEach(e => {
+    const li = document.createElement("li");
+    const done = isDone(e.route.id, e.time);
+    if(e.min < nowMin) li.classList.add("past");
+    if(!nextEl && e.min >= nowMin){ li.classList.add("next"); nextEl = li; }
+    if(done) li.classList.add("done");
+    if(!F.other && F.route === e.route.id && F.sched === e.time) li.classList.add("sel");
+    li.innerHTML = '<span class="t">' + e.time + '</span><span class="r">' + esc(e.route.id) + '</span><span class="s">' +
+      (e.route.stop ? e.route.stop + "番" : "") + '</span><span class="d">' + esc(e.route.dest) + '</span><span class="c">' + (done ? "✓" : "") + '</span>';
+    li.onclick = () => pick(e);
+    ul.appendChild(li);
+  });
+  if(scroll && nextEl) ul.scrollTop = Math.max(0, nextEl.offsetTop - 60);
+}
+
+function pick(e){
+  F.route = e.route.id; F.sched = e.time; F.other = false;
+  saveDraft(); renderForm(); renderTT(false);
+  $("formSec").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function routeOptions(){
+  const opts = ROUTES.filter(r => r.loc === S.loc);
+  $("route").innerHTML = '<option value="">選択してください</option>' +
+    opts.map(r => '<option value="' + esc(r.id) + '">' + esc(r.id) + " " + esc(r.dest) + (r.stop ? "（" + r.stop + "番）" : "") + "</option>").join("") +
+    '<option value="__other">その他（手入力）</option>';
+}
+
+function syncCounters(){
+  document.querySelectorAll(".counter").forEach(el => {
+    const inp = el.querySelector("input");
+    if(document.activeElement !== inp) inp.value = F[el.dataset.key];
+  });
+}
+
+function renderDelay(){
+  const a = toMin(F.actual), s = toMin(F.sched);
+  if(a === null || s === null){ $("delayView").textContent = ""; return; }
+  const d = a - s;
+  $("delayView").textContent = d > 0 ? "遅れ：＋" + d + "分" : d < 0 ? "早発：" + d + "分" : "定刻どおり";
+}
+
+function congMismatch(){ return leftLocked() && F.cong !== 4; }
+function renderCong(){
+  seg($("congSeg"), [[1,"1"],[2,"2"],[3,"3"],[4,"4"]], v => v === F.cong,
+    v => { F.cong = v; saveDraft(); renderCong(); });
+  $("congWarn").classList.toggle("hide", !congMismatch());
+}
+
+function renderLeftA(){
+  seg($("leftSeg"), [["no","なし"],["yes","あり"]], v => (v === "yes" && F.left === true) || (v === "no" && F.left === false), v => {
+    F.left = v === "yes";
+    if(F.left && !F.leftApprox) F.leftApprox = 1;
+    saveDraft(); renderLeftA(); renderCong(); syncCounters();
+  });
+  $("approxWrap").classList.toggle("hide", F.left !== true);
+}
+
+function renderForm(){
+  const r = ROUTES.find(x => x.id === F.route);
+  $("route").value = F.other ? "__other" : (r && r.loc === S.loc ? F.route : "");
+  $("sched").value = F.sched;
+  $("otherWrap").classList.toggle("hide", !F.other);
+  $("otherRoute").value = F.oRoute; $("otherDest").value = F.oDest; $("otherStop").value = F.oStop;
+  $("selBox").textContent = F.other
+    ? "手入力：" + (F.oRoute || "系統未入力") + "　" + (F.sched || "--:--")
+    : r ? (F.sched || "--:--") + "　" + r.id + " " + r.dest + (r.stop ? "（" + r.stop + "番）" : "")
+    : "便が未選択です（時刻表をタップ、または下で選択・手入力）";
+  $("cancel").checked = F.cancel;
+  $("mainFields").classList.toggle("hide", F.cancel);
+  $("actual").value = F.actual;
+  renderDelay();
+  syncCounters();
+  $("leftA").classList.toggle("hide", MODE !== "A");
+  $("leftB").classList.toggle("hide", MODE !== "B");
+  if(MODE === "A") renderLeftA();
+  renderCong();
+  $("memo").value = F.memo;
+}
+
+function recSummary(r){
+  if(r["欠便"]) return r["定刻"] + " " + r["系統"] + "　欠便";
+  const left = MODE === "A" ? (r["積み残し有無"] === "あり" ? "あり(約" + r["積み残し概数"] + ")" : "なし") : r["積み残し人数"];
+  return r["定刻"] + " " + r["系統"] + "　発" + r["実発車時刻"] + "　乗" + r["乗車人数"] + "(観" + r["観光客数"] + ")　残" + left + "　混" + r["混雑度"];
+}
+
+function csvText(){
+  return [COLS.join(",")].concat(R.map(r => COLS.map(c => csvCell(r[c])).join(","))).join("\n");
+}
+
+function renderRecords(){
+  const ul = $("recList"); ul.innerHTML = "";
+  $("recCount").textContent = R.length + "件";
+  if(!R.length){ ul.innerHTML = '<li class="empty">まだ記録がありません</li>'; }
+  R.slice().reverse().forEach(r => {
+    const li = document.createElement("li");
+    const span = document.createElement("span"); span.textContent = recSummary(r);
+    const b = document.createElement("button"); b.type = "button"; b.className = "danger"; b.textContent = "削除";
+    b.onclick = () => {
+      if(!confirm("この記録を削除しますか？\n" + recSummary(r))) return;
+      R = R.filter(x => x._id !== r._id); saveRecords(); renderRecords(); renderTT(false);
+    };
+    li.appendChild(span); li.appendChild(b); ul.appendChild(li);
+  });
+  $("csv").value = csvText();
+}
+
+// ===== 保存 =====
+function fail(msg, el){ toast(msg, true); if(el) el.focus(); }
+function save(){
+  if(!S.recorder.trim()) return fail("記録者を入力してください", $("recorder"));
+  const r = ROUTES.find(x => x.id === F.route);
+  const routeId = F.other ? F.oRoute.trim() : F.route;
+  if(!routeId) return fail("系統を選んでください");
+  if(!F.sched) return fail("定刻を入力してください", $("sched"));
+  if(!F.cancel){
+    if(!F.actual) return fail("実発車時刻を入力してください（「今」ボタン）");
+    if(F.tour > F.board) return fail("観光客数が乗車人数を超えています");
+    if(MODE === "A" && F.left === null) return fail("積み残しの有無を選んでください");
+    if(!F.cong) return fail("混雑度を選んでください");
+    if(congMismatch() && !confirm("積み残しがありますが、混雑度が" + F.cong + "です。このまま保存しますか？")) return;
+  }
+  if(isDone(routeId, F.sched) && !confirm("この便はすでに記録があります。追加で保存しますか？")) return;
+  const now = new Date();
+  const rec = {
+    _id: now.getTime() + "-" + Math.random().toString(36).slice(2, 7),
+    "記録者": S.recorder.trim(),
+    "日付": todayStr(now),
+    "ダイヤ": DIAS[curDia()],
+    "観測地点": S.loc,
+    "乗り場": F.other ? F.oStop.trim() : (r ? r.stop : ""),
+    "系統": routeId,
+    "行先": F.other ? F.oDest.trim() : (r ? r.dest : ""),
+    "定刻": F.sched,
+    "実発車時刻": F.cancel ? "" : F.actual,
+    "遅れ(分)": F.cancel ? "" : toMin(F.actual) - toMin(F.sched),
+    "乗車人数": F.cancel ? "" : F.board,
+    "観光客数": F.cancel ? "" : F.tour,
+    "混雑度": F.cancel ? "" : F.cong,
+    "欠便": F.cancel ? "欠便" : "",
+    "メモ": F.memo.trim(),
+    "入力日時": todayStr(now) + " " + hms(now)
+  };
+  if(MODE === "A"){
+    rec["積み残し有無"] = F.cancel ? "" : (F.left ? "あり" : "なし");
+    rec["積み残し概数"] = (!F.cancel && F.left) ? F.leftApprox : "";
+  } else {
+    rec["積み残し人数"] = F.cancel ? "" : F.leftCount;
+  }
+  R.push(rec); saveRecords();
+  F = blankForm(); saveDraft();
+  renderForm(); renderRecords(); renderTT(true);
+  toast("保存しました（計" + R.length + "件）");
+  $("ttSec").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+// ===== イベント =====
+function bind(){
+  $("recorder").addEventListener("input", e => { S.recorder = e.target.value; saveSettings(); });
+  $("toggleAll").onclick = () => { S.showAll = !S.showAll; saveSettings(); renderTT(true); };
+
+  $("route").onchange = e => {
+    const v = e.target.value;
+    if(v === "__other"){ F.other = true; F.route = ""; }
+    else { F.other = false; F.route = v; }
+    saveDraft(); renderForm(); renderTT(false);
+  };
+  $("sched").onchange = e => { F.sched = e.target.value; saveDraft(); renderForm(); renderTT(false); };
+  $("otherRoute").oninput = e => { F.oRoute = e.target.value; saveDraft(); $("selBox").textContent = "手入力：" + (F.oRoute || "系統未入力") + "　" + (F.sched || "--:--"); };
+  $("otherDest").oninput = e => { F.oDest = e.target.value; saveDraft(); };
+  $("otherStop").oninput = e => { F.oStop = e.target.value; saveDraft(); };
+  $("cancel").onchange = e => { F.cancel = e.target.checked; saveDraft(); renderForm(); };
+
+  $("actual").onchange = e => { F.actual = e.target.value; saveDraft(); renderDelay(); };
+  $("nowBtn").onclick = () => { F.actual = hm(); saveDraft(); $("actual").value = F.actual; renderDelay(); };
+  const shift = d => { const base = toMin(F.actual) ?? toMin(hm()); F.actual = fromMin(base + d); saveDraft(); $("actual").value = F.actual; renderDelay(); };
+  $("minus1").onclick = () => shift(-1);
+  $("plus1").onclick = () => shift(1);
+
+  document.querySelectorAll(".counter").forEach(el => {
+    const key = el.dataset.key;
+    el.innerHTML = '<button type="button" aria-label="1減らす">−</button><input type="number" inputmode="numeric" min="0" step="1"><button type="button" aria-label="1増やす">＋</button>';
+    const [minus, inp, plus] = el.children;
+    const after = () => { saveDraft(); if(key === "leftCount") renderCong(); };
+    minus.onclick = () => { F[key] = Math.max(0, (+F[key] || 0) - 1); inp.value = F[key]; after(); };
+    plus.onclick = () => { F[key] = (+F[key] || 0) + 1; inp.value = F[key]; after(); };
+    inp.oninput = () => { const v = parseInt(inp.value, 10); F[key] = isNaN(v) || v < 0 ? 0 : v; after(); };
+    inp.onblur = () => { inp.value = F[key]; };
+  });
+
+  $("memo").oninput = e => { F.memo = e.target.value; saveDraft(); };
+  $("clearBtn").onclick = () => { F = blankForm(); saveDraft(); renderForm(); renderTT(false); };
+  $("saveBtn").onclick = save;
+
+  $("copyBtn").onclick = async () => {
+    const t = csvText();
+    try { await navigator.clipboard.writeText(t); toast("コピーしました（" + R.length + "件）"); }
+    catch(e){
+      const ta = $("csv"); ta.focus(); ta.select();
+      try { document.execCommand("copy"); toast("コピーしました（" + R.length + "件）"); }
+      catch(e2){ toast("コピーできませんでした。テキストを長押しで選択してください", true); }
+    }
+  };
+  if(!navigator.share) $("shareBtn").classList.add("hide");
+  $("shareBtn").onclick = async () => {
+    try { await navigator.share({title:"B1観測CSV（" + S.recorder + "）", text:csvText()}); } catch(e){}
+  };
+  $("dlBtn").onclick = () => {
+    const blob = new Blob(["\ufeff" + csvText()], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "B1_" + VER_LABEL + "_" + S.loc + "_" + (S.recorder || "noname") + "_" + todayStr().replace(/\//g, "") + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  $("wipeBtn").onclick = () => {
+    if(!R.length) return toast("記録がありません");
+    if(!confirm("全" + R.length + "件の記録を削除します。先にコピーしましたか？")) return;
+    if(!confirm("本当に削除しますか？元に戻せません。")) return;
+    R = []; saveRecords(); renderRecords(); renderTT(false); toast("削除しました");
+  };
+}
+
+// ===== 起動 =====
+bind();
+routeOptions();
+renderHeader();
+renderSettings();
+renderForm();
+renderRecords();
+renderTT(true);
+setInterval(() => { renderHeader(); }, 15000);
+setInterval(() => { renderTT(false); }, 30000);
+</script>
+</body>
+</html>
